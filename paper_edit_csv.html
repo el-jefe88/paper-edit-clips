@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paper Edit → Clips</title>
+<style>
+  :root {
+    --bg: #f5f4f1;
+    --panel: #ffffff;
+    --border: #ddd8d0;
+    --text: #23211d;
+    --muted: #6b6660;
+    --accent: #b5541f;
+    --accent-hover: #963f11;
+    --row-alt: #faf8f5;
+    --danger: #a4372a;
+    --ok: #3c6e42;
+    --mono-bg: #1f1d19;
+    --mono-text: #e9e4da;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1a1815;
+      --panel: #24211d;
+      --border: #3a352e;
+      --text: #ece7de;
+      --muted: #9a938a;
+      --accent: #e08a4d;
+      --accent-hover: #f0a266;
+      --row-alt: #2b2721;
+      --danger: #e07463;
+      --ok: #7fbf8a;
+      --mono-bg: #14120f;
+      --mono-text: #d8d2c6;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1a1815;
+    --panel: #24211d;
+    --border: #3a352e;
+    --text: #ece7de;
+    --muted: #9a938a;
+    --accent: #e08a4d;
+    --accent-hover: #f0a266;
+    --row-alt: #2b2721;
+    --danger: #e07463;
+    --ok: #7fbf8a;
+    --mono-bg: #14120f;
+    --mono-text: #d8d2c6;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100%;
+    padding: 24px 16px 48px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 1rem; margin: 0 0 12px; }
+  .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 20px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1.2fr auto;
+    gap: 10px;
+    align-items: end;
+  }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+  }
+  label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  input[type="text"]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
+  .hint { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+  button {
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    padding: 9px 14px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: transparent; border-color: var(--border); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: transparent; border: none; color: var(--danger); padding: 4px 8px; font-size: 0.85rem; }
+  .btn-danger:hover { text-decoration: underline; }
+  .error { color: var(--danger); font-size: 0.8rem; margin-top: 8px; min-height: 1em; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; min-width: 640px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th {
+    background: var(--row-alt);
+    color: var(--muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+  }
+  tr:nth-child(even) td { background: var(--row-alt); }
+  td.name-cell input { padding: 4px 6px; font-size: 0.85rem; }
+  .empty { padding: 28px; text-align: center; color: var(--muted); font-size: 0.9rem; }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .count { color: var(--muted); font-size: 0.85rem; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .status { font-size: 0.82rem; margin-top: 10px; min-height: 1.2em; }
+  .status.ok { color: var(--ok); }
+  .status.err { color: var(--danger); }
+  footer { color: var(--muted); font-size: 0.78rem; margin-top: 24px; line-height: 1.5; }
+  code { background: var(--row-alt); padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+  .cmd-box {
+    background: var(--mono-bg);
+    color: var(--mono-text);
+    border-radius: 8px;
+    padding: 14px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Paper Edit → Clips</h1>
+  <p class="sub">Enter the source mp4 filename and clock-time in/out points for each segment — clips with several selects just get several rows. Export a CSV for <code>extract_clips.sh</code>, or copy ready-to-run ffmpeg commands straight into your terminal.</p>
+
+  <div class="panel">
+    <div class="grid">
+      <div>
+        <label for="source">Source mp4 filename</label>
+        <input type="text" id="source" placeholder="e.g. Flowerazzi_090926.mp4" autocomplete="off">
+      </div>
+      <div>
+        <label for="start">In point</label>
+        <input type="text" id="start" placeholder="HH:MM:SS.mmm" autocomplete="off">
+      </div>
+      <div>
+        <label for="end">Out point</label>
+        <input type="text" id="end" placeholder="HH:MM:SS.mmm" autocomplete="off">
+      </div>
+      <div>
+        <label for="name">Clip name</label>
+        <input type="text" id="name" placeholder="auto" autocomplete="off">
+      </div>
+      <div>
+        <button class="btn-primary" id="addBtn" type="button">Add segment</button>
+      </div>
+    </div>
+    <div class="hint">Times: <code>HH:MM:SS</code> or <code>HH:MM:SS.mmm</code>. Clip name auto-suggests from the source file (editable) — press Enter in the Out field to add quickly.</div>
+    <div class="error" id="formError"></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="count" id="rowCount">0 segments</div>
+    <div class="actions">
+      <button class="btn-secondary" id="clearBtn" type="button">Clear all</button>
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table id="rowsTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Source</th>
+          <th>In</th>
+          <th>Out</th>
+          <th>Duration</th>
+          <th>Output name</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rowsBody"></tbody>
+    </table>
+    <div class="empty" id="emptyState">No segments yet — add your first one above.</div>
+  </div>
+
+  <div class="panel">
+    <h2>CSV export <span class="badge">for extract_clips.sh</span></h2>
+    <div class="hint" style="margin-top:0 0 12px">Columns: <code>source,start,end,output_name</code></div>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn-primary" id="downloadCsvBtn" type="button">Download clips.csv</button>
+      <button class="btn-secondary" id="copyCsvBtn" type="button">Copy CSV</button>
+    </div>
+    <div class="status" id="csvStatus"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Direct ffmpeg commands <span class="badge">runs on its own, no script needed</span></h2>
+    <div class="grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 10px;">
+      <div>
+        <label for="qualityPreset">Quality preset</label>
+        <select id="qualityPreset">
+          <option value="lb">Proxy — DNxHR LB (small, fast scrub)</option>
+          <option value="sq">Offline — DNxHR SQ (light edit quality)</option>
+          <option value="hq" selected>Full Quality — DNxHR HQ (your tested setting)</option>
+          <option value="hqx">Master 10-bit — DNxHR HQX (finishing)</option>
+        </select>
+      </div>
+      <div>
+        <label for="outdir">Output destination (base folder)</label>
+        <input type="text" id="outdir" placeholder="/path/to/output" autocomplete="off">
+      </div>
+    </div>
+    <div class="grid" style="grid-template-columns: 1fr; margin-bottom: 10px;">
+      <div>
+        <label for="footageDir">Footage source folder <span style="text-transform:none; font-weight:400;">(optional — adds a <code style="text-transform:none;">cd</code> line; only needed if your source filenames above aren't full paths)</span></label>
+        <input type="text" id="footageDir" placeholder="/path/to/footage" autocomplete="off">
+      </div>
+    </div>
+    <label style="display:flex; align-items:center; gap:8px; margin-bottom: 6px; cursor:pointer;">
+      <input type="checkbox" id="alsoMaster" style="width:auto;">
+      <span style="font-size:0.85rem;">Also generate Full Quality (DNxHR HQ) masters alongside this preset</span>
+    </label>
+    <div class="hint" id="folderHint" style="margin-bottom: 14px;"></div>
+    <div class="actions" style="margin-bottom:12px">
+      <button class="btn-secondary" id="refreshCmdBtn" type="button">Refresh</button>
+    </div>
+    <div class="cmd-box" id="cmdBox">Add a segment above to see the commands here.</div>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn-primary" id="copyCmdBtn" type="button">Copy commands</button>
+      <button class="btn-secondary" id="downloadCmdBtn" type="button">Download as .sh</button>
+    </div>
+    <div class="status" id="cmdStatus"></div>
+  </div>
+
+  <footer>
+    Your list, output destination, and quality preset are saved in this browser as you go, so a refresh won't lose them. Proxy, Offline, and Full Quality presets stay 8-bit 4:2:2 (<code>yuv422p</code>); Master 10-bit uses <code>yuv422p10le</code>. Each preset writes into its own subfolder so a proxy pass and a full-quality pass of the same list never collide.
+  </footer>
+</div>
+
+<script>
+(function () {
+  const ROWS_KEY = "paperEditRows_v1";
+  const OUTDIR_KEY = "paperEditOutdir_v1";
+  const PRESET_KEY = "paperEditPreset_v1";
+  const ALSOMASTER_KEY = "paperEditAlsoMaster_v1";
+  const FOOTAGEDIR_KEY = "paperEditFootageDir_v1";
+  let rows = [];
+
+  // DNxHR profile map: ffmpeg -profile:v value, matching pixel format, and
+  // the subfolder each preset's output lands in (so proxy and full-quality
+  // runs of the same list never collide or overwrite each other).
+  const PROFILES = {
+    lb:  { profile: "dnxhr_lb",  pix_fmt: "yuv422p",      folder: "proxy_lb" },
+    sq:  { profile: "dnxhr_sq",  pix_fmt: "yuv422p",      folder: "offline_sq" },
+    hq:  { profile: "dnxhr_hq",  pix_fmt: "yuv422p",      folder: "dnxhr_hq" },
+    hqx: { profile: "dnxhr_hqx", pix_fmt: "yuv422p10le",  folder: "dnxhr_hqx" }
+  };
+
+  try {
+    const saved = localStorage.getItem(ROWS_KEY);
+    if (saved) rows = JSON.parse(saved);
+  } catch (e) { rows = []; }
+
+  const sourceInput = document.getElementById("source");
+  const startInput = document.getElementById("start");
+  const endInput = document.getElementById("end");
+  const nameInput = document.getElementById("name");
+  const addBtn = document.getElementById("addBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const rowsBody = document.getElementById("rowsBody");
+  const emptyState = document.getElementById("emptyState");
+  const rowCount = document.getElementById("rowCount");
+  const formError = document.getElementById("formError");
+
+  const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+  const copyCsvBtn = document.getElementById("copyCsvBtn");
+  const csvStatus = document.getElementById("csvStatus");
+
+  const outdirInput = document.getElementById("outdir");
+  const footageDirInput = document.getElementById("footageDir");
+  const qualityPresetSelect = document.getElementById("qualityPreset");
+  const alsoMasterCheckbox = document.getElementById("alsoMaster");
+  const folderHint = document.getElementById("folderHint");
+  const refreshCmdBtn = document.getElementById("refreshCmdBtn");
+  const cmdBox = document.getElementById("cmdBox");
+  const copyCmdBtn = document.getElementById("copyCmdBtn");
+  const downloadCmdBtn = document.getElementById("downloadCmdBtn");
+  const cmdStatus = document.getElementById("cmdStatus");
+
+  try {
+    outdirInput.value = localStorage.getItem(OUTDIR_KEY) || "";
+    footageDirInput.value = localStorage.getItem(FOOTAGEDIR_KEY) || "";
+    const savedPreset = localStorage.getItem(PRESET_KEY);
+    if (savedPreset && PROFILES[savedPreset]) qualityPresetSelect.value = savedPreset;
+    alsoMasterCheckbox.checked = localStorage.getItem(ALSOMASTER_KEY) === "1";
+  } catch (e) { /* ignore */ }
+
+  const TIME_RE = /^([0-9]{1,2}):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,3})?$/;
+
+  function timeToSeconds(tc) {
+    const m = TIME_RE.exec(tc.trim());
+    if (!m) return null;
+    const h = parseInt(m[1], 10);
+    const min = parseInt(m[2], 10);
+    const s = parseInt(m[3], 10);
+    const ms = m[4] ? parseFloat(m[4]) : 0;
+    return h * 3600 + min * 60 + s + ms;
+  }
+
+  function formatDuration(sec) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = (sec % 60);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${pad(h)}:${pad(m)}:${s.toFixed(2).padStart(5, "0")}`;
+  }
+
+  function basenameNoExt(pathOrName) {
+    const parts = String(pathOrName).split(/[\\/]/);
+    const base = parts[parts.length - 1] || "clip";
+    return base.replace(/\.[^/.]+$/, "");
+  }
+
+  function sanitizeName(str) {
+    return str.trim().replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "_").replace(/^_+|_+$/g, "");
+  }
+
+  function suggestName(source) {
+    const base = sanitizeName(basenameNoExt(source)) || "clip";
+    let n = 1;
+    const existing = rows.filter(r => r.source === source);
+    let candidate;
+    do {
+      candidate = existing.length === 0 && n === 1 ? `${base}_seg1` : `${base}_seg${n}`;
+      n++;
+    } while (rows.some(r => r.name === candidate));
+    return candidate;
+  }
+
+  function persistRows() {
+    try { localStorage.setItem(ROWS_KEY, JSON.stringify(rows)); } catch (e) { /* ignore */ }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function render() {
+    rowsBody.innerHTML = "";
+    if (rows.length === 0) {
+      emptyState.style.display = "block";
+    } else {
+      emptyState.style.display = "none";
+      rows.forEach((r, i) => {
+        const tr = document.createElement("tr");
+        const dur = timeToSeconds(r.end) - timeToSeconds(r.start);
+        tr.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${escapeHtml(r.source)}</td>
+          <td>${escapeHtml(r.start)}</td>
+          <td>${escapeHtml(r.end)}</td>
+          <td>${formatDuration(dur)}</td>
+          <td class="name-cell"></td>
+          <td><button class="btn-danger" type="button">Remove</button></td>
+        `;
+        const nameCell = tr.querySelector(".name-cell");
+        const nameField = document.createElement("input");
+        nameField.type = "text";
+        nameField.value = r.name;
+        nameField.addEventListener("change", () => {
+          rows[i].name = sanitizeName(nameField.value) || `clip_${i + 1}`;
+          nameField.value = rows[i].name;
+          persistRows();
+          renderCommands();
+        });
+        nameCell.appendChild(nameField);
+        tr.querySelector(".btn-danger").addEventListener("click", () => {
+          rows.splice(i, 1);
+          persistRows();
+          render();
+        });
+        rowsBody.appendChild(tr);
+      });
+    }
+    rowCount.textContent = rows.length === 1 ? "1 segment" : `${rows.length} segments`;
+    renderCommands();
+  }
+
+  function addRow() {
+    formError.textContent = "";
+    const source = sourceInput.value.trim();
+    const start = startInput.value.trim();
+    const end = endInput.value.trim();
+    let name = nameInput.value.trim();
+
+    if (!source) { formError.textContent = "Enter the source mp4 filename."; sourceInput.focus(); return; }
+    const startSec = timeToSeconds(start);
+    if (startSec === null) { formError.textContent = "In point must look like HH:MM:SS or HH:MM:SS.mmm"; startInput.focus(); return; }
+    const endSec = timeToSeconds(end);
+    if (endSec === null) { formError.textContent = "Out point must look like HH:MM:SS or HH:MM:SS.mmm"; endInput.focus(); return; }
+    if (endSec <= startSec) { formError.textContent = "Out point must be after the in point."; endInput.focus(); return; }
+
+    if (!name) name = suggestName(source);
+    name = sanitizeName(name) || suggestName(source);
+    if (rows.some(r => r.name === name)) name = suggestName(source);
+
+    rows.push({ source, start, end, name });
+    persistRows();
+    render();
+
+    sourceInput.value = source;
+    startInput.value = "";
+    endInput.value = "";
+    nameInput.value = "";
+    startInput.focus();
+  }
+
+  addBtn.addEventListener("click", addRow);
+  [startInput, endInput, nameInput].forEach(el => {
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addRow(); } });
+  });
+  sourceInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); startInput.focus(); } });
+
+  clearBtn.addEventListener("click", () => {
+    if (rows.length === 0) return;
+    if (confirm("Remove all segments? This cannot be undone.")) {
+      rows = [];
+      persistRows();
+      render();
+    }
+  });
+
+  outdirInput.addEventListener("input", () => {
+    try { localStorage.setItem(OUTDIR_KEY, outdirInput.value); } catch (e) { /* ignore */ }
+    renderCommands();
+  });
+  footageDirInput.addEventListener("input", () => {
+    try { localStorage.setItem(FOOTAGEDIR_KEY, footageDirInput.value); } catch (e) { /* ignore */ }
+    renderCommands();
+  });
+  qualityPresetSelect.addEventListener("change", () => {
+    try { localStorage.setItem(PRESET_KEY, qualityPresetSelect.value); } catch (e) { /* ignore */ }
+    updateAlsoMasterVisibility();
+    renderCommands();
+  });
+  alsoMasterCheckbox.addEventListener("change", () => {
+    try { localStorage.setItem(ALSOMASTER_KEY, alsoMasterCheckbox.checked ? "1" : "0"); } catch (e) { /* ignore */ }
+    renderCommands();
+  });
+  refreshCmdBtn.addEventListener("click", renderCommands);
+
+  function updateAlsoMasterVisibility() {
+    const isAlreadyHQ = qualityPresetSelect.value === "hq";
+    alsoMasterCheckbox.disabled = isAlreadyHQ;
+    if (isAlreadyHQ) alsoMasterCheckbox.checked = false;
+  }
+  updateAlsoMasterVisibility();
+
+  // ---------- CSV ----------
+  function toCsv() {
+    const lines = ["source,start,end,output_name"];
+    rows.forEach(r => {
+      const esc = (v) => /[",]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+      lines.push([esc(r.source), r.start, r.end, esc(r.name)].join(","));
+    });
+    return lines.join("\n");
+  }
+
+  downloadCsvBtn.addEventListener("click", async () => {
+    if (rows.length === 0) { setStatus(csvStatus, "Add at least one segment first.", "err"); return; }
+    await saveFile("clips.csv", toCsv(), csvStatus);
+  });
+  copyCsvBtn.addEventListener("click", async () => {
+    if (rows.length === 0) { setStatus(csvStatus, "Add at least one segment first.", "err"); return; }
+    await copyText(toCsv(), csvStatus);
+  });
+
+  // ---------- ffmpeg commands ----------
+  function shQuote(str) {
+    return '"' + String(str).replace(/(["\\$`])/g, '\\$1') + '"';
+  }
+
+  function joinPath(dir, name) {
+    if (!dir) return name;
+    return dir.replace(/\/+$/, "") + "/" + name;
+  }
+
+  function commandsForProfile(presetKey, baseDir) {
+    const p = PROFILES[presetKey];
+    const dir = baseDir ? joinPath(baseDir, p.folder) : p.folder;
+    const lines = [`# --- ${presetKey.toUpperCase()} (${p.profile}) → ${dir} ---`, `mkdir -p ${shQuote(dir)}`];
+    rows.forEach(r => {
+      const startSec = timeToSeconds(r.start);
+      const endSec = timeToSeconds(r.end);
+      const duration = (endSec - startSec).toFixed(3);
+      const outPath = joinPath(dir, `${r.name}.mov`);
+      lines.push(
+        `ffmpeg -y -ss ${startSec.toFixed(3)} -i ${shQuote(r.source)} -t ${duration} ` +
+        `-c:v dnxhd -profile:v ${p.profile} -pix_fmt ${p.pix_fmt} -c:a pcm_s16le ${shQuote(outPath)}`
+      );
+    });
+    return lines.join("\n");
+  }
+
+  function toCommands() {
+    if (rows.length === 0) return "";
+    const dir = outdirInput.value.trim();
+    const footageDir = footageDirInput.value.trim();
+    const preset = qualityPresetSelect.value;
+    const lines = ["#!/bin/bash", "# Generated by Paper Edit → Clips", "set -e", ""];
+
+    if (footageDir) {
+      lines.push(`cd ${shQuote(footageDir)}`);
+      lines.push("");
+    }
+
+    lines.push(commandsForProfile(preset, dir));
+
+    if (alsoMasterCheckbox.checked && preset !== "hq") {
+      lines.push("");
+      lines.push(commandsForProfile("hq", dir));
+    }
+
+    return lines.join("\n") + "\n";
+  }
+
+  function hasRelativeSources() {
+    return rows.some(r => !/^([a-zA-Z]:)?[\\/]/.test(r.source));
+  }
+
+  function renderCommands() {
+    const dir = outdirInput.value.trim();
+    const preset = qualityPresetSelect.value;
+    const folders = [PROFILES[preset].folder];
+    if (alsoMasterCheckbox.checked && preset !== "hq") folders.push(PROFILES.hq.folder);
+    const base = dir || "<output destination>";
+    let hint = "Files land in: " + folders.map(f => `${base}/${f}/`).join("  and  ");
+
+    if (hasRelativeSources() && !footageDirInput.value.trim()) {
+      hint += "  ⚠ one or more source filenames aren't full paths — set the footage source folder above, or the commands must be run from that folder.";
+    }
+    folderHint.textContent = hint;
+
+    const text = toCommands();
+    cmdBox.textContent = text || "Add a segment above to see the commands here.";
+  }
+
+  downloadCmdBtn.addEventListener("click", async () => {
+    if (rows.length === 0) { setStatus(cmdStatus, "Add at least one segment first.", "err"); return; }
+    await saveFile("extract_clips_direct.sh", toCommands(), cmdStatus);
+  });
+  copyCmdBtn.addEventListener("click", async () => {
+    if (rows.length === 0) { setStatus(cmdStatus, "Add at least one segment first.", "err"); return; }
+    await copyText(toCommands(), cmdStatus);
+  });
+
+  // ---------- shared helpers: work both as a Claude-hosted artifact and as a plain local file ----------
+  function setStatus(el, msg, kind) {
+    el.textContent = msg;
+    el.className = "status" + (kind ? " " + kind : "");
+  }
+
+  async function saveFile(filename, content, statusEl) {
+    setStatus(statusEl, "", "");
+    // Prefer the Claude artifact runtime's downloads capability when present.
+    if (window.claude && typeof window.claude.use === "function") {
+      try {
+        const downloads = await window.claude.use("downloads");
+        if (downloads) {
+          const result = await downloads.save({ filename, data: content });
+          setStatus(statusEl, result.status === "saved" ? `Saved ${filename}.` : "Delivered.", "ok");
+          return;
+        }
+      } catch (err) {
+        if (err && err.code === "declined") { setStatus(statusEl, "Download cancelled.", "err"); return; }
+        // fall through to local browser download on any other runtime error
+      }
+    }
+    // Plain local-file / any-browser fallback: standard Blob download.
+    try {
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setStatus(statusEl, `Saved ${filename}.`, "ok");
+    } catch (err) {
+      setStatus(statusEl, "Couldn't save the file — copy it manually instead.", "err");
+    }
+  }
+
+  async function copyText(text, statusEl) {
+    setStatus(statusEl, "", "");
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        setStatus(statusEl, "Copied to clipboard.", "ok");
+        return;
+      }
+      throw new Error("no clipboard api");
+    } catch (e) {
+      // Fallback for non-secure contexts (e.g. plain file:// without clipboard permission)
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        setStatus(statusEl, "Copied to clipboard.", "ok");
+      } catch (e2) {
+        setStatus(statusEl, "Couldn't copy — select and copy manually from the box above.", "err");
+      }
+    }
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
